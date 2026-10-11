@@ -127,20 +127,28 @@ function normalizePosToken(token){
  return t;
 }
 function renderPosHtml(value){
- const raw=String(value||'').trim();
+ let raw=String(value||'').trim();
  if(!raw)return'';
- return raw.split('・').map(part=>{
+ // 表示上は「動・他」「動・自」を「他」「自」に統一する（保存データは変更しない）
+ raw=raw.replace(/(?:^|・)動・(?=(?:他|自)(?:・|\/|$))/g,'');
+ raw=raw.replace(/^動・/,'');
+ return raw.split('・').filter(Boolean).map(part=>{
    const bits=part.split('/').map(normalizePosToken);
    const rendered=bits.map(bit=>{
      const token=normalizePosToken(bit.trim());
      return '<span class="'+posTokenClass(token)+'">'+esc(token)+'</span>';
-   }).join('<span class="pos-separator">/</span>');
+   }).join('<span class="pos-separator">・</span>');
    return rendered;
  }).join('<span class="pos-separator">・</span>');
 }
 
 function formatMeaningLines(value){
-  return String(value ?? '').replace(/[ \t　]*([①②③④⑤⑥⑦⑧⑨⑩])/g, '\n$1').replace(/^\n+/, '');
+  return String(value ?? '')
+    .replace(/[ \t]+/g,' ')
+    .replace(/[ \t　]*([①②③④⑤⑥⑦⑧⑨⑩])/g, '\n$1')
+    .replace(/^\n+/, '')
+    .replace(/\n[ \t　]*\n+/g,'\n')
+    .trim();
 }
 function renderMeaningHtml(value){
   return esc(formatMeaningLines(value)).replace(/\n/g,'<br>');
