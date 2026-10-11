@@ -161,13 +161,33 @@ function cleanMeaningPosArtifacts(value){
 }
 function renderMeaningHtml(value){
   let text=formatMeaningLines(cleanMeaningPosArtifacts(value));
-  // 意味欄に明記された可算・不可算注記のみ、表示時に枠付き記号へ置換する
-  text=text.replace(/[（(]\s*不可算\s*[）)]/g,' Ⓤ')
-           .replace(/[（(]\s*可算\s*[）)]/g,' Ⓒ')
-           .replace(/(?:^|[\s　])不可算(?=$|[\s　、，。])/g,' Ⓤ')
-           .replace(/(?:^|[\s　])可算(?=$|[\s　、，。])/g,' Ⓒ')
-           .replace(/[ \t]+/g,' ')
-           .replace(/ *\n */g,'\n').trim();
+  // 可算・不可算の注記を削除し、該当する意味項目の先頭に記号を付ける。
+  // 「①②③（いずれも可算）」のような注記は、番号付き項目すべてに適用する。
+  const allCountable=/[（(]\s*(?:いずれも|①②③|①②|①③|②③)\s*可算\s*[）)]/;
+  const allUncountable=/[（(]\s*(?:いずれも|①②③|①②|①③|②③)\s*不可算\s*[）)]/;
+  let allMark='';
+  if(allUncountable.test(text)){allMark='Ⓤ';text=text.replace(allUncountable,'');}
+  else if(allCountable.test(text)){allMark='Ⓒ';text=text.replace(allCountable,'');}
+  const markerByItem=[];
+  text=text.replace(/([（(]\s*(?:通例|通常|通例は)?\s*不可算\s*[）)]|[（(]\s*(?:通例|通常)?\s*可算\s*[）)])/g, (match)=>{
+    markerByItem.push(/不可算/.test(match)?'Ⓤ':'Ⓒ');
+    return '\u0000'+(markerByItem.length-1)+'\u0000';
+  });
+  // マーカーの位置を、そのマーカーが属する番号付き意味の先頭へ移動する。
+  text=text.replace(/\u0000(\d+)\u0000/g,(placeholder,index)=>placeholder);
+  const pieces=text.split(/(?=[①②③④⑤⑥⑦⑧⑨⑩])/);
+  text=pieces.map(piece=>{
+    const found=[...piece.matchAll(/\u0000(\d+)\u0000/g)];
+    let mark=allMark;
+    if(found.length){mark=markerByItem[Number(found[0][1])]||mark;piece=piece.replace(/\u0000\d+\u0000/g,'');}
+    if(mark){
+      // その項目の先頭に記号を配置。空白は記号の後ろに1つだけ。
+      piece=piece.replace(/^([①②③④⑤⑥⑦⑧⑨⑩]\s*)/,'$1'+mark+' ');
+      if(!/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(piece))piece=mark+' '+piece.trimStart();
+    }
+    return piece;
+  }).join('');
+  text=text.replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').trim();
   return esc(text).replace(/Ⓤ/g,'🆄').replace(/Ⓒ/g,'🅲').replace(/\n/g,'<br>');
 }
 function leapMeaning(m){return String(m||'')
