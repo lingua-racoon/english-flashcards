@@ -280,7 +280,7 @@ function renderLeapUsage(c){
    for(let i=0;i<count;i++){
      const expression=expressions[i]||'';
      const meaning=meanings[i]||'';
-     html+='<div class="leap-expression-item"><div class="leap-bulb">💡</div>';
+     html+='<div class="leap-expression-item">';
      if(expression)html+='<div class="expr">'+esc(expression)+'</div>';
      if(meaning)html+='<div class="usageMeaning">'+esc(meaning)+'</div>';
      html+='</div>';
