@@ -785,10 +785,11 @@ const OVS='.bkM,.afxM,.cosM,.dbM,.rangeModal,.rtOverlay,#resetConfirmModal,.tutO
 function openOv(){try{return [...document.querySelectorAll(OVS)].find(el=>!el.hidden&&getComputedStyle(el).display!=='none')||null}catch(e){return null}}
 window.fcOverlayOpen=openOv;
 function scrollable(t,root){while(t&&t!==root.parentElement){if(t.nodeType===1){const cs=getComputedStyle(t);if(/(auto|scroll)/.test(cs.overflowY)&&t.scrollHeight>t.clientHeight+1)return t;if(/(auto|scroll)/.test(cs.overflowX)&&t.scrollWidth>t.clientWidth+1)return t}t=t.parentElement}return null}
-setInterval(()=>{const o=!!openOv();document.documentElement.classList.toggle('ovLock',o)},200);
-document.addEventListener('touchmove',function(e){const ov=openOv();if(!ov||e.touches.length!==1)return;if(!scrollable(e.target,ov)&&e.cancelable)e.preventDefault()},{passive:false});
+let curOv=null;function pollOv(){curOv=openOv();document.documentElement.classList.toggle('ovLock',!!curOv)}
+setInterval(()=>{if(!document.hidden)pollOv()},200);
+document.addEventListener('touchmove',function(e){const ov=curOv;if(!ov||e.touches.length!==1||!ov.isConnected)return;if(!scrollable(e.target,ov)&&e.cancelable)e.preventDefault()},{passive:false});
 document.addEventListener('touchstart',function(e){
-if(openOv()){sx=null;return}
+pollOv();if(curOv){sx=null;return}
 if(e.touches.length!==1)return;
 sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now();
 },{passive:true});
